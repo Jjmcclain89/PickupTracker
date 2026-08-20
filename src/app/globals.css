@@ -1,0 +1,109 @@
+@import "tailwindcss";
+
+:root {
+  /* Felt table + brass comp-ticket palette */
+  --felt-950: #0b201a;
+  --felt-900: #0f2a22;
+  --felt-800: #163b30;
+  --felt-700: #1f4f40;
+  --brass-400: #d4af37;
+  --brass-500: #c9a227;
+  --brass-600: #a9821c;
+  --ticket-cream: #f4ecd8;
+  --ticket-cream-dim: #e8dcc0;
+  --ink: #1c1a14;
+  --ink-soft: #4a453a;
+
+  --status-active: #c9a227;
+  --status-active-bg: #3a3110;
+  --status-upcoming: #5b8fb0;
+  --status-upcoming-bg: #16283a;
+  --status-expired: #8a7a6a;
+  --status-expired-bg: #241f18;
+  --status-picked: #6fae72;
+  --status-picked-bg: #16321a;
+
+  --font-display: var(--font-oswald);
+  --font-body: var(--font-inter);
+  --font-mono: var(--font-jetbrains);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background:
+    radial-gradient(ellipse 120% 80% at 50% -10%, rgba(212, 175, 55, 0.08), transparent 60%),
+    linear-gradient(180deg, var(--felt-950), var(--felt-900) 40%, var(--felt-800));
+  background-attachment: fixed;
+  color: var(--ticket-cream);
+  font-family: var(--font-body);
+  min-height: 100dvh;
+}
+
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+}
+
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Comp-voucher ticket card with perforation + notch cutouts */
+.ticket {
+  position: relative;
+  background: var(--ticket-cream);
+  color: var(--ink);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.55), 0 1px 0 rgba(255, 255, 255, 0.06) inset;
+}
+
+.ticket::before,
+.ticket::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--felt-900);
+  transform: translateY(-50%);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15) inset;
+}
+
+.ticket::before {
+  left: -9px;
+}
+
+.ticket::after {
+  right: -9px;
+}
+
+.ticket-stub {
+  border-top: 2px dashed var(--ink-soft);
+  opacity: 0.55;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lift-in {
+    animation: lift-in 0.35s ease-out both;
+  }
+}
+
+@keyframes lift-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+::selection {
+  background: var(--brass-500);
+  color: var(--ink);
+}
