@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Navbar from '@/components/Navbar';
-import Board from '@/components/Board';
+import PickupsView from '@/components/PickupsView';
 
 export default async function Home() {
   const supabase = await createClient();
@@ -31,7 +31,7 @@ export default async function Home() {
   return (
     <div className="flex flex-col flex-1">
       <Navbar displayName={profile?.display_name ?? 'there'} />
-      <Board initialPickups={pickups ?? []} profiles={profiles ?? []} />
+      <PickupsView initialPickups={pickups ?? []} profiles={profiles ?? []} />
     </div>
   );
 }

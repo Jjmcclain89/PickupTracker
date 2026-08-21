@@ -1,19 +1,14 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import {
-  PickupWithAssignee,
-  Profile,
-  PickupStatus,
-  STATUS_LABEL,
-  getPickupStatus,
-} from '@/types/pickup';
-import PickupCard from './PickupCard';
+import { useState } from 'react';
+import { PickupWithAssignee, Profile } from '@/types/pickup';
+import CalendarView from './CalendarView';
+import TableView from './TableView';
 import PickupFormModal from './PickupFormModal';
 
-const COLUMN_ORDER: PickupStatus[] = ['active', 'upcoming', 'picked_up', 'expired'];
+type ViewMode = 'calendar' | 'table';
 
-export default function Board({
+export default function PickupsView({
   initialPickups,
   profiles,
 }: {
@@ -21,21 +16,9 @@ export default function Board({
   profiles: Profile[];
 }) {
   const [pickups, setPickups] = useState(initialPickups);
+  const [view, setView] = useState<ViewMode>('calendar');
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<PickupWithAssignee | null>(null);
-
-  const grouped = useMemo(() => {
-    const map: Record<PickupStatus, PickupWithAssignee[]> = {
-      active: [],
-      upcoming: [],
-      picked_up: [],
-      expired: [],
-    };
-    for (const p of pickups) {
-      map[getPickupStatus(p)].push(p);
-    }
-    return map;
-  }, [pickups]);
 
   function openNew() {
     setEditing(null);
@@ -105,43 +88,41 @@ export default function Board({
 
   return (
     <div className="px-4 sm:px-6 py-6 max-w-6xl mx-auto w-full flex-1">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
         <h1 className="font-display text-2xl font-semibold">Pickups</h1>
-        <button
-          onClick={openNew}
-          className="rounded-md bg-[var(--brass-500)] text-[var(--ink)] font-display font-medium tracking-wide px-4 py-2 text-sm hover:bg-[var(--brass-400)] transition-colors"
-        >
-          + New pickup
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="flex rounded-md border border-[var(--ticket-cream)]/20 overflow-hidden text-xs font-semibold uppercase tracking-wide">
+            <button
+              onClick={() => setView('calendar')}
+              className={`px-3 py-1.5 transition-colors ${
+                view === 'calendar' ? 'bg-[var(--brass-500)] text-[var(--ink)]' : 'hover:bg-white/10'
+              }`}
+            >
+              Calendar
+            </button>
+            <button
+              onClick={() => setView('table')}
+              className={`px-3 py-1.5 transition-colors ${
+                view === 'table' ? 'bg-[var(--brass-500)] text-[var(--ink)]' : 'hover:bg-white/10'
+              }`}
+            >
+              Table
+            </button>
+          </div>
+          <button
+            onClick={openNew}
+            className="rounded-md bg-[var(--brass-500)] text-[var(--ink)] font-display font-medium tracking-wide px-4 py-2 text-sm hover:bg-[var(--brass-400)] transition-colors"
+          >
+            + New pickup
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        {COLUMN_ORDER.map((status) => (
-          <div key={status}>
-            <div className="flex items-center gap-2 mb-3">
-              <h2 className="font-display text-sm uppercase tracking-wide text-[var(--ticket-cream)]/80">
-                {STATUS_LABEL[status]}
-              </h2>
-              <span className="text-xs text-[var(--ticket-cream)]/40 font-mono">
-                {grouped[status].length}
-              </span>
-            </div>
-            <div className="flex flex-col gap-4">
-              {grouped[status].length === 0 && (
-                <p className="text-xs text-[var(--ticket-cream)]/40 italic">Nothing here.</p>
-              )}
-              {grouped[status].map((p) => (
-                <PickupCard
-                  key={p.id}
-                  pickup={p}
-                  onEdit={() => openEdit(p)}
-                  onTogglePickedUp={() => togglePickedUp(p)}
-                />
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
+      {view === 'calendar' ? (
+        <CalendarView pickups={pickups} onEdit={openEdit} />
+      ) : (
+        <TableView pickups={pickups} onEdit={openEdit} onTogglePickedUp={togglePickedUp} />
+      )}
 
       <PickupFormModal
         key={modalOpen ? editing?.id ?? 'new' : 'closed'}

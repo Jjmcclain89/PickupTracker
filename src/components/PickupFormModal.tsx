@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Profile, PickupWithAssignee } from '@/types/pickup';
+import DateRangePicker from './DateRangePicker';
 
 type FormState = {
   player_name: string;
@@ -128,24 +129,13 @@ export default function PickupFormModal({
             />
           </Field>
 
-          <div className="flex gap-3">
-            <Field label="Start date" className="flex-1">
-              <input
-                type="date"
-                value={form.date_start}
-                onChange={(e) => setForm((f) => ({ ...f, date_start: e.target.value }))}
-                className={inputClass}
-              />
-            </Field>
-            <Field label="End date" className="flex-1">
-              <input
-                type="date"
-                value={form.date_end}
-                onChange={(e) => setForm((f) => ({ ...f, date_end: e.target.value }))}
-                className={inputClass}
-              />
-            </Field>
-          </div>
+          <Field label="Dates">
+            <DateRangePicker
+              startDate={form.date_start}
+              endDate={form.date_end}
+              onChange={(date_start, date_end) => setForm((f) => ({ ...f, date_start, date_end }))}
+            />
+          </Field>
 
           <Field label="Assigned to">
             <select
