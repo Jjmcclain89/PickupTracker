@@ -19,7 +19,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Comp Run — Free Play Pickups",
+  title: "Pickup Tracker — Free Play Pickups",
   description: "Coordinating casino free play pickups",
 };
 

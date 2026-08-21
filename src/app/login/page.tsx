@@ -40,7 +40,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm lift-in">
         <div className="mb-8 text-center">
           <p className="font-display text-xs uppercase tracking-[0.3em] text-[var(--brass-400)]">
-            Comp Run
+            Pickup Tracker
           </p>
           <h1 className="font-display text-3xl font-semibold mt-1">
             Sign in

@@ -1,4 +1,4 @@
-# Comp Run — free play pickup tracker
+# Pickup Tracker — free play pickup tracker
 
 Coordinates casino free play pickups between Josh, Igor, and Dave (plus a Test account).
 

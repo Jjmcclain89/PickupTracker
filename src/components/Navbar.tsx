@@ -17,7 +17,7 @@ export default function Navbar({ displayName }: { displayName: string }) {
     <header className="border-b border-[var(--brass-500)]/20 px-4 sm:px-6 py-4 flex items-center justify-between">
       <div>
         <p className="font-display text-xs uppercase tracking-[0.3em] text-[var(--brass-400)]">
-          Comp Run
+          Pickup Tracker
         </p>
         <p className="text-sm text-[var(--ticket-cream)]/70">Hey, {displayName}</p>
       </div>
