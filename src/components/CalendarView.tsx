@@ -13,9 +13,7 @@ import {
 } from 'date-fns';
 import { PickupWithAssignee, PickupStatus, Profile, getPickupStatus } from '@/types/pickup';
 import { parseDateOnly } from '@/lib/formatDateRange';
-
-const filterSelectClass =
-  'rounded-md border border-[var(--ticket-cream)]/20 bg-[var(--felt-900)] text-[var(--ticket-cream)] px-2.5 py-1.5 text-xs outline-none focus:ring-2 focus:ring-[var(--brass-500)]';
+import MultiSelectFilter from './MultiSelectFilter';
 
 const STATUS_BAR_CLASS: Record<PickupStatus, string> = {
   active: 'bg-[var(--status-active)] text-[var(--ink)]',
@@ -73,9 +71,9 @@ export default function CalendarView({
   onTogglePickedUp: (pickup: PickupWithAssignee) => void;
 }) {
   const [weekCursor, setWeekCursor] = useState(() => startOfWeek(new Date()));
-  const [filterPlayer, setFilterPlayer] = useState('');
-  const [filterAssignedTo, setFilterAssignedTo] = useState('');
-  const [filterCasino, setFilterCasino] = useState('');
+  const [filterPlayers, setFilterPlayers] = useState<string[]>([]);
+  const [filterAssignedTo, setFilterAssignedTo] = useState<string[]>([]);
+  const [filterCasinos, setFilterCasinos] = useState<string[]>([]);
 
   const playerOptions = useMemo(
     () => Array.from(new Set(pickups.map((p) => p.player_name))).sort(),
@@ -85,20 +83,28 @@ export default function CalendarView({
     () => Array.from(new Set(pickups.map((p) => p.casino))).sort(),
     [pickups]
   );
+  const assigneeOptions = useMemo(
+    () => [
+      { value: 'unassigned', label: 'Unassigned' },
+      ...profiles.map((p) => ({ value: p.id, label: p.display_name })),
+    ],
+    [profiles]
+  );
 
   const filteredPickups = useMemo(() => {
     return pickups.filter((p) => {
-      if (filterPlayer && p.player_name !== filterPlayer) return false;
-      if (filterCasino && p.casino !== filterCasino) return false;
-      if (filterAssignedTo === 'unassigned' && p.assigned_to) return false;
-      if (filterAssignedTo && filterAssignedTo !== 'unassigned' && p.assigned_to !== filterAssignedTo) {
-        return false;
+      if (filterCasinos.length > 0 && !filterCasinos.includes(p.casino)) return false;
+      if (filterPlayers.length > 0 && !filterPlayers.includes(p.player_name)) return false;
+      if (filterAssignedTo.length > 0) {
+        const key = p.assigned_to ?? 'unassigned';
+        if (!filterAssignedTo.includes(key)) return false;
       }
       return true;
     });
-  }, [pickups, filterPlayer, filterCasino, filterAssignedTo]);
+  }, [pickups, filterCasinos, filterPlayers, filterAssignedTo]);
 
-  const hasActiveFilters = !!(filterPlayer || filterAssignedTo || filterCasino);
+  const hasActiveFilters =
+    filterPlayers.length > 0 || filterAssignedTo.length > 0 || filterCasinos.length > 0;
 
   const gridStart = startOfWeek(weekCursor);
   const gridEnd = addDays(gridStart, 20); // 3 weeks total
@@ -151,50 +157,31 @@ export default function CalendarView({
       </div>
 
       <div className="flex flex-wrap items-center gap-2 mb-4">
-        <select
-          value={filterPlayer}
-          onChange={(e) => setFilterPlayer(e.target.value)}
-          className={filterSelectClass}
-        >
-          <option value="">All identities</option>
-          {playerOptions.map((name) => (
-            <option key={name} value={name}>
-              {name}
-            </option>
-          ))}
-        </select>
-        <select
-          value={filterAssignedTo}
-          onChange={(e) => setFilterAssignedTo(e.target.value)}
-          className={filterSelectClass}
-        >
-          <option value="">All assignees</option>
-          <option value="unassigned">Unassigned</option>
-          {profiles.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.display_name}
-            </option>
-          ))}
-        </select>
-        <select
-          value={filterCasino}
-          onChange={(e) => setFilterCasino(e.target.value)}
-          className={filterSelectClass}
-        >
-          <option value="">All casinos</option>
-          {casinoOptions.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
+        <MultiSelectFilter
+          label="Casinos"
+          options={casinoOptions.map((c) => ({ value: c, label: c }))}
+          selected={filterCasinos}
+          onChange={setFilterCasinos}
+        />
+        <MultiSelectFilter
+          label="Identities"
+          options={playerOptions.map((name) => ({ value: name, label: name }))}
+          selected={filterPlayers}
+          onChange={setFilterPlayers}
+        />
+        <MultiSelectFilter
+          label="Assignees"
+          options={assigneeOptions}
+          selected={filterAssignedTo}
+          onChange={setFilterAssignedTo}
+        />
         {hasActiveFilters && (
           <button
             type="button"
             onClick={() => {
-              setFilterPlayer('');
-              setFilterAssignedTo('');
-              setFilterCasino('');
+              setFilterPlayers([]);
+              setFilterAssignedTo([]);
+              setFilterCasinos([]);
             }}
             className="text-xs font-semibold uppercase tracking-wide text-[var(--ticket-cream)]/50 hover:text-[var(--ticket-cream)] transition-colors"
           >
