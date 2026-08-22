@@ -25,13 +25,19 @@ export default async function Home() {
 
   const { data: pickups } = await supabase
     .from('pickups')
-    .select('*, assignee:assigned_to(id, username, display_name)')
+    .select(
+      '*, assignee:assigned_to(id, username, display_name), picked_up_by_profile:picked_up_by(id, username, display_name), shares:pickup_shares(profile:profiles(id, username, display_name))'
+    )
     .order('date_start', { ascending: true });
 
   return (
     <div className="flex flex-col flex-1">
       <Navbar displayName={profile?.display_name ?? 'there'} />
-      <PickupsView initialPickups={pickups ?? []} profiles={profiles ?? []} />
+      <PickupsView
+        initialPickups={pickups ?? []}
+        profiles={profiles ?? []}
+        currentUserId={user.id}
+      />
     </div>
   );
 }

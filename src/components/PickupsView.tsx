@@ -5,20 +5,26 @@ import { PickupWithAssignee, Profile } from '@/types/pickup';
 import CalendarView from './CalendarView';
 import TableView from './TableView';
 import PickupFormModal from './PickupFormModal';
+import BulkImportModal, { BulkPickupPayload } from './BulkImportModal';
+import MarkPickedUpModal from './MarkPickedUpModal';
 
 type ViewMode = 'calendar' | 'table';
 
 export default function PickupsView({
   initialPickups,
   profiles,
+  currentUserId,
 }: {
   initialPickups: PickupWithAssignee[];
   profiles: Profile[];
+  currentUserId: string;
 }) {
   const [pickups, setPickups] = useState(initialPickups);
   const [view, setView] = useState<ViewMode>('calendar');
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<PickupWithAssignee | null>(null);
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
+  const [pickingUpFor, setPickingUpFor] = useState<PickupWithAssignee | null>(null);
 
   function openNew() {
     setEditing(null);
@@ -38,6 +44,7 @@ export default function PickupsView({
     date_end: string;
     assigned_to: string;
     notes: string;
+    shared_user_ids: string[];
   }) {
     const payload = {
       player_name: values.player_name,
@@ -47,6 +54,7 @@ export default function PickupsView({
       date_end: values.date_end,
       assigned_to: values.assigned_to || null,
       notes: values.notes || null,
+      shared_user_ids: values.shared_user_ids,
     };
 
     if (editing) {
@@ -75,15 +83,60 @@ export default function PickupsView({
     setModalOpen(false);
   }
 
-  async function togglePickedUp(p: PickupWithAssignee) {
-    const picked_up_at = p.picked_up_at ? null : new Date().toISOString();
+  async function handleBulkSubmit(payloads: BulkPickupPayload[]) {
+    const results = await Promise.all(
+      payloads.map(async (payload) => {
+        const res = await fetch('/api/pickups', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const body = await res.json();
+        if (!res.ok || !body.pickup) {
+          return { ok: false as const, error: body.error ?? `Request failed (${res.status})` };
+        }
+        return { ok: true as const, pickup: body.pickup as PickupWithAssignee };
+      })
+    );
+
+    const created = results.filter((r) => r.ok).map((r) => r.pickup);
+    if (created.length > 0) {
+      setPickups((prev) => [...prev, ...created]);
+    }
+
+    const failed = results.filter((r) => !r.ok);
+    if (failed.length > 0) {
+      throw new Error(
+        `${failed.length} of ${payloads.length} pickups failed to create: ${failed[0].error}`
+      );
+    }
+  }
+
+  async function applyPickedUp(p: PickupWithAssignee, pickedUpBy: string | null) {
+    const picked_up_at = pickedUpBy ? new Date().toISOString() : null;
     const res = await fetch(`/api/pickups/${p.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ picked_up_at }),
+      body: JSON.stringify({ picked_up_at, picked_up_by: pickedUpBy }),
     });
     const { pickup } = await res.json();
     setPickups((prev) => prev.map((x) => (x.id === pickup.id ? pickup : x)));
+    setEditing((prev) => (prev && prev.id === pickup.id ? pickup : prev));
+  }
+
+  function requestTogglePickedUp(p: PickupWithAssignee) {
+    if (p.picked_up_at) {
+      void applyPickedUp(p, null);
+    } else {
+      setPickingUpFor(p);
+    }
+  }
+
+  async function handleConfirmPickedUp(userId: string) {
+    if (!pickingUpFor) return;
+    await applyPickedUp(pickingUpFor, userId);
+    setPickingUpFor(null);
+    setModalOpen(false);
   }
 
   return (
@@ -110,6 +163,12 @@ export default function PickupsView({
             </button>
           </div>
           <button
+            onClick={() => setBulkModalOpen(true)}
+            className="rounded-md border border-[var(--ticket-cream)]/20 px-4 py-2 text-sm font-semibold hover:bg-white/10 transition-colors"
+          >
+            Add multiple pickups
+          </button>
+          <button
             onClick={openNew}
             className="rounded-md bg-[var(--brass-500)] text-[var(--ink)] font-display font-medium tracking-wide px-4 py-2 text-sm hover:bg-[var(--brass-400)] transition-colors"
           >
@@ -119,19 +178,44 @@ export default function PickupsView({
       </div>
 
       {view === 'calendar' ? (
-        <CalendarView pickups={pickups} onEdit={openEdit} />
+        <CalendarView
+          pickups={pickups}
+          profiles={profiles}
+          onEdit={openEdit}
+          onTogglePickedUp={requestTogglePickedUp}
+        />
       ) : (
-        <TableView pickups={pickups} onEdit={openEdit} onTogglePickedUp={togglePickedUp} />
+        <TableView pickups={pickups} onEdit={openEdit} onTogglePickedUp={requestTogglePickedUp} />
       )}
 
       <PickupFormModal
-        key={modalOpen ? editing?.id ?? 'new' : 'closed'}
+        key={`edit-${modalOpen ? editing?.id ?? 'new' : 'closed'}`}
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onSubmit={handleSubmit}
         onDelete={editing ? handleDelete : undefined}
+        onTogglePickedUp={editing ? async () => requestTogglePickedUp(editing) : undefined}
         profiles={profiles}
         editing={editing}
+        currentUserId={currentUserId}
+      />
+
+      <BulkImportModal
+        key={`bulk-${bulkModalOpen ? 'open' : 'closed'}`}
+        open={bulkModalOpen}
+        onClose={() => setBulkModalOpen(false)}
+        onSubmit={handleBulkSubmit}
+        profiles={profiles}
+      />
+
+      <MarkPickedUpModal
+        key={`pickup-${pickingUpFor ? pickingUpFor.id : 'closed'}`}
+        open={!!pickingUpFor}
+        pickup={pickingUpFor}
+        profiles={profiles}
+        currentUserId={currentUserId}
+        onConfirm={handleConfirmPickedUp}
+        onClose={() => setPickingUpFor(null)}
       />
     </div>
   );

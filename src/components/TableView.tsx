@@ -56,6 +56,11 @@ export default function TableView({
                 <td className="px-3 py-2">{p.assignee?.display_name ?? 'Unassigned'}</td>
                 <td className="px-3 py-2">
                   <StatusBadge status={status} />
+                  {status === 'picked_up' && p.picked_up_by_profile && (
+                    <p className="text-[10px] text-[var(--ticket-cream)]/50 mt-0.5">
+                      by {p.picked_up_by_profile.display_name}
+                    </p>
+                  )}
                 </td>
                 <td className="px-3 py-2 text-right whitespace-nowrap">
                   <button

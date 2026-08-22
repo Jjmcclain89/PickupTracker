@@ -14,6 +14,7 @@ export type Pickup = {
   date_end: string;
   assigned_to: string | null;
   picked_up_at: string | null;
+  picked_up_by: string | null;
   notes: string | null;
   created_by: string | null;
   created_at: string;
@@ -22,7 +23,15 @@ export type Pickup = {
 
 export type PickupWithAssignee = Pickup & {
   assignee: Profile | null;
+  picked_up_by_profile: Profile | null;
+  shares: { profile: Profile }[];
 };
+
+// Everyone with visibility into a pickup beyond its owner: whoever it's
+// assigned to, plus anyone the owner explicitly shared it with.
+export function getSharedProfiles(pickup: Pick<PickupWithAssignee, 'shares'>): Profile[] {
+  return pickup.shares.map((s) => s.profile);
+}
 
 export type PickupStatus = 'picked_up' | 'expired' | 'active' | 'upcoming';
 

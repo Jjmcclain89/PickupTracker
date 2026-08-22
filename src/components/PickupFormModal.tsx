@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Profile, PickupWithAssignee } from '@/types/pickup';
+import { format } from 'date-fns';
+import { Profile, PickupWithAssignee, getSharedProfiles } from '@/types/pickup';
+import { parseDateOnly } from '@/lib/formatDateRange';
 import DateRangePicker from './DateRangePicker';
 
 type FormState = {
@@ -12,6 +14,7 @@ type FormState = {
   date_end: string;
   assigned_to: string;
   notes: string;
+  shared_user_ids: string[];
 };
 
 const EMPTY: FormState = {
@@ -22,6 +25,7 @@ const EMPTY: FormState = {
   date_end: '',
   assigned_to: '',
   notes: '',
+  shared_user_ids: [],
 };
 
 function toFormState(p: PickupWithAssignee): FormState {
@@ -33,6 +37,7 @@ function toFormState(p: PickupWithAssignee): FormState {
     date_end: p.date_end,
     assigned_to: p.assigned_to ?? '',
     notes: p.notes ?? '',
+    shared_user_ids: getSharedProfiles(p).map((s) => s.id),
   };
 }
 
@@ -41,19 +46,26 @@ export default function PickupFormModal({
   onClose,
   onSubmit,
   onDelete,
+  onTogglePickedUp,
   profiles,
   editing,
+  currentUserId,
 }: {
   open: boolean;
   onClose: () => void;
   onSubmit: (values: FormState) => Promise<void>;
   onDelete?: () => Promise<void>;
+  onTogglePickedUp?: () => Promise<void>;
   profiles: Profile[];
   editing: PickupWithAssignee | null;
+  currentUserId: string;
 }) {
   const [form, setForm] = useState<FormState>(() => (editing ? toFormState(editing) : EMPTY));
   const [saving, setSaving] = useState(false);
+  const [togglingPickedUp, setTogglingPickedUp] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isOwner = !editing || editing.created_by === currentUserId;
 
   if (!open) return null;
 
@@ -80,6 +92,25 @@ export default function PickupFormModal({
       setSaving(false);
     }
   }
+
+  async function handleTogglePickedUp() {
+    if (!onTogglePickedUp) return;
+    setTogglingPickedUp(true);
+    try {
+      await onTogglePickedUp();
+    } finally {
+      setTogglingPickedUp(false);
+    }
+  }
+
+  const dayRangeLabel =
+    form.date_start && form.date_end
+      ? (() => {
+          const startDay = format(parseDateOnly(form.date_start), 'EEE');
+          const endDay = format(parseDateOnly(form.date_end), 'EEE');
+          return form.date_start === form.date_end ? startDay : `${startDay}-${endDay}`;
+        })()
+      : null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm px-0 sm:px-4">
@@ -135,22 +166,74 @@ export default function PickupFormModal({
               endDate={form.date_end}
               onChange={(date_start, date_end) => setForm((f) => ({ ...f, date_start, date_end }))}
             />
+            {dayRangeLabel && (
+              <p className="text-xs text-[var(--ink-soft)] mt-1">{dayRangeLabel}</p>
+            )}
           </Field>
 
           <Field label="Assigned to">
-            <select
-              value={form.assigned_to}
-              onChange={(e) => setForm((f) => ({ ...f, assigned_to: e.target.value }))}
-              className={inputClass}
-            >
-              <option value="">Unassigned</option>
-              {profiles.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.display_name}
-                </option>
-              ))}
-            </select>
+            {isOwner ? (
+              <select
+                value={form.assigned_to}
+                onChange={(e) => setForm((f) => ({ ...f, assigned_to: e.target.value }))}
+                className={inputClass}
+              >
+                <option value="">Unassigned</option>
+                {profiles.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.display_name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <p className="text-sm py-2 text-[var(--ink)]">
+                {profiles.find((p) => p.id === form.assigned_to)?.display_name ?? 'Unassigned'}
+              </p>
+            )}
           </Field>
+
+          {isOwner ? (
+            <Field label="Shared with">
+              <div className="flex flex-col gap-1.5">
+                {profiles
+                  .filter((p) => p.id !== currentUserId && p.id !== form.assigned_to)
+                  .map((p) => (
+                    <label key={p.id} className="flex items-center gap-2 text-sm text-[var(--ink)]">
+                      <input
+                        type="checkbox"
+                        checked={form.shared_user_ids.includes(p.id)}
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            shared_user_ids: e.target.checked
+                              ? [...f.shared_user_ids, p.id]
+                              : f.shared_user_ids.filter((id) => id !== p.id),
+                          }))
+                        }
+                      />
+                      {p.display_name}
+                    </label>
+                  ))}
+              </div>
+              {form.assigned_to && (
+                <p className="text-[11px] text-[var(--ink-soft)] mt-1">
+                  {profiles.find((p) => p.id === form.assigned_to)?.display_name ?? 'The assignee'}{' '}
+                  also has access automatically, since they&apos;re assigned.
+                </p>
+              )}
+            </Field>
+          ) : (
+            editing &&
+            getSharedProfiles(editing).length > 0 && (
+              <Field label="Shared with">
+                <p className="text-sm text-[var(--ink)]">
+                  {getSharedProfiles(editing)
+                    .map((p) => p.display_name)
+                    .join(', ')}
+                </p>
+              </Field>
+            )
+          )}
 
           <Field label="Notes (optional)">
             <textarea
@@ -165,8 +248,27 @@ export default function PickupFormModal({
             <p className="text-sm text-red-700 bg-red-100 rounded-md px-3 py-2">{error}</p>
           )}
 
+          {editing && onTogglePickedUp && (
+            <div>
+              <button
+                type="button"
+                onClick={handleTogglePickedUp}
+                disabled={togglingPickedUp}
+                className="w-full rounded-md border border-[var(--ink-soft)]/20 py-2.5 text-sm font-semibold uppercase tracking-wide hover:bg-black/5 transition-colors disabled:opacity-60"
+                style={{ color: editing.picked_up_at ? 'var(--ink-soft)' : 'var(--status-picked)' }}
+              >
+                {togglingPickedUp ? 'Updating…' : editing.picked_up_at ? 'Undo pickup' : 'Mark picked up'}
+              </button>
+              {editing.picked_up_at && editing.picked_up_by_profile && (
+                <p className="text-[11px] text-[var(--ink-soft)] mt-1 text-center">
+                  Picked up by {editing.picked_up_by_profile.display_name}
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="flex gap-2 mt-2">
-            {editing && onDelete && (
+            {editing && onDelete && isOwner && (
               <button
                 type="button"
                 onClick={onDelete}
