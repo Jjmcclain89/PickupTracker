@@ -215,7 +215,6 @@ export default function CalendarView({
               const endCol = differenceInCalendarDays(segEnd, weekStart);
               return {
                 ...item,
-                segEnd,
                 startCol,
                 span: endCol - startCol + 1,
                 continuesBefore: item.start < weekStart,
@@ -238,32 +237,36 @@ export default function CalendarView({
                 gridTemplateRows: `${dateRowHeight}px repeat(${Math.max(laneRows, 1)}, ${laneHeight}px)`,
               }}
             >
+              {week.map((day, i) => (
+                <div
+                  key={day.toISOString()}
+                  className={`border-b border-[var(--ticket-cream)]/10 px-1.5 pt-1.5 ${
+                    i < 6 ? 'border-r' : ''
+                  } ${isToday(day) ? 'relative z-10 ring-2 ring-inset ring-[var(--brass-500)]' : ''}`}
+                  style={{ gridColumn: i + 1, gridRow: `1 / span ${Math.max(laneRows, 1) + 1}` }}
+                >
+                  <span
+                    className={
+                      isToday(day)
+                        ? `inline-flex items-center justify-center rounded-full bg-[var(--brass-500)] text-[var(--ink)] font-mono font-semibold ${
+                            isCurrentWeek ? 'w-7 h-7 text-sm' : 'w-5 h-5 text-xs'
+                          }`
+                        : `font-mono text-[var(--ticket-cream)]/60 ${isCurrentWeek ? 'text-sm' : 'text-xs'}`
+                    }
+                  >
+                    {format(day, 'd')}
+                  </span>
+                </div>
+              ))}
+
               {week.map((day, i) => {
-                const isPast = isBefore(day, todayStart);
+                if (!isBefore(day, todayStart)) return null;
                 return (
                   <div
-                    key={day.toISOString()}
-                    className={`border-b border-[var(--ticket-cream)]/10 px-1.5 pt-1.5 ${
-                      i < 6 ? 'border-r' : ''
-                    } ${isPast ? 'bg-black/20' : ''} ${
-                      isToday(day) ? 'relative z-10 ring-2 ring-inset ring-[var(--brass-500)]' : ''
-                    }`}
+                    key={`past-${day.toISOString()}`}
+                    className="pointer-events-none z-20 bg-black/30"
                     style={{ gridColumn: i + 1, gridRow: `1 / span ${Math.max(laneRows, 1) + 1}` }}
-                  >
-                    <span
-                      className={
-                        isToday(day)
-                          ? `inline-flex items-center justify-center rounded-full bg-[var(--brass-500)] text-[var(--ink)] font-mono font-semibold ${
-                              isCurrentWeek ? 'w-7 h-7 text-sm' : 'w-5 h-5 text-xs'
-                            }`
-                          : `font-mono text-[var(--ticket-cream)]/60 ${isCurrentWeek ? 'text-sm' : 'text-xs'} ${
-                              isPast ? 'opacity-60' : ''
-                            }`
-                      }
-                    >
-                      {format(day, 'd')}
-                    </span>
-                  </div>
+                  />
                 );
               })}
 
@@ -276,7 +279,6 @@ export default function CalendarView({
                   status === 'picked_up'
                     ? `Picked up by ${item.pickup.picked_up_by_profile?.display_name ?? 'someone'}`
                     : (item.pickup.assignee?.display_name ?? 'Unassigned');
-                const segmentIsPast = isBefore(item.segEnd, todayStart);
                 return (
                   <div
                     key={item.pickup.id}
@@ -292,7 +294,7 @@ export default function CalendarView({
                     title={`${item.pickup.player_name} — ${item.pickup.casino} — $${amountLabel} — ${assigneeLabel}`}
                     className={`relative z-10 mt-px flex items-center overflow-hidden px-1.5 cursor-pointer hover:brightness-110 transition-[filter] ${
                       isCurrentWeek ? 'text-xs py-0.5' : 'text-[11px]'
-                    } ${STATUS_BAR_CLASS[status]} ${segmentIsPast ? 'opacity-70' : ''} ${
+                    } ${STATUS_BAR_CLASS[status]} ${
                       item.continuesBefore ? 'rounded-l-none ml-0' : 'rounded-l-sm ml-0.5'
                     } ${item.continuesAfter ? 'rounded-r-none mr-0' : 'rounded-r-sm mr-0.5'}`}
                     style={{
