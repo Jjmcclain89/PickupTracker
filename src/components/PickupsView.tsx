@@ -3,12 +3,9 @@
 import { useState } from 'react';
 import { PickupWithAssignee, Profile } from '@/types/pickup';
 import CalendarView from './CalendarView';
-import TableView from './TableView';
 import PickupFormModal from './PickupFormModal';
 import BulkImportModal, { BulkPickupPayload } from './BulkImportModal';
 import MarkPickedUpModal from './MarkPickedUpModal';
-
-type ViewMode = 'calendar' | 'table';
 
 export default function PickupsView({
   initialPickups,
@@ -20,7 +17,6 @@ export default function PickupsView({
   currentUserId: string;
 }) {
   const [pickups, setPickups] = useState(initialPickups);
-  const [view, setView] = useState<ViewMode>('calendar');
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<PickupWithAssignee | null>(null);
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
@@ -144,24 +140,6 @@ export default function PickupsView({
       <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
         <h1 className="font-display text-2xl font-semibold">Pickups</h1>
         <div className="flex items-center gap-3">
-          <div className="flex rounded-md border border-[var(--ticket-cream)]/20 overflow-hidden text-xs font-semibold uppercase tracking-wide">
-            <button
-              onClick={() => setView('calendar')}
-              className={`px-3 py-1.5 transition-colors ${
-                view === 'calendar' ? 'bg-[var(--brass-500)] text-[var(--ink)]' : 'hover:bg-white/10'
-              }`}
-            >
-              Calendar
-            </button>
-            <button
-              onClick={() => setView('table')}
-              className={`px-3 py-1.5 transition-colors ${
-                view === 'table' ? 'bg-[var(--brass-500)] text-[var(--ink)]' : 'hover:bg-white/10'
-              }`}
-            >
-              Table
-            </button>
-          </div>
           <button
             onClick={() => setBulkModalOpen(true)}
             className="rounded-md border border-[var(--ticket-cream)]/20 px-4 py-2 text-sm font-semibold hover:bg-white/10 transition-colors"
@@ -177,16 +155,12 @@ export default function PickupsView({
         </div>
       </div>
 
-      {view === 'calendar' ? (
-        <CalendarView
-          pickups={pickups}
-          profiles={profiles}
-          onEdit={openEdit}
-          onTogglePickedUp={requestTogglePickedUp}
-        />
-      ) : (
-        <TableView pickups={pickups} onEdit={openEdit} onTogglePickedUp={requestTogglePickedUp} />
-      )}
+      <CalendarView
+        pickups={pickups}
+        profiles={profiles}
+        onEdit={openEdit}
+        onTogglePickedUp={requestTogglePickedUp}
+      />
 
       <PickupFormModal
         key={`edit-${modalOpen ? editing?.id ?? 'new' : 'closed'}`}

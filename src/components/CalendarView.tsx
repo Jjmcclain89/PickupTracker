@@ -2,17 +2,14 @@
 
 import { useMemo, useState } from 'react';
 import {
-  addMonths,
+  addDays,
+  addWeeks,
   differenceInCalendarDays,
   eachDayOfInterval,
-  endOfMonth,
-  endOfWeek,
   format,
-  isSameMonth,
   isToday,
-  startOfMonth,
   startOfWeek,
-  subMonths,
+  subWeeks,
 } from 'date-fns';
 import { PickupWithAssignee, PickupStatus, Profile, getPickupStatus } from '@/types/pickup';
 import { parseDateOnly } from '@/lib/formatDateRange';
@@ -75,7 +72,7 @@ export default function CalendarView({
   onEdit: (pickup: PickupWithAssignee) => void;
   onTogglePickedUp: (pickup: PickupWithAssignee) => void;
 }) {
-  const [monthCursor, setMonthCursor] = useState(() => startOfMonth(new Date()));
+  const [weekCursor, setWeekCursor] = useState(() => startOfWeek(new Date()));
   const [filterPlayer, setFilterPlayer] = useState('');
   const [filterAssignedTo, setFilterAssignedTo] = useState('');
   const [filterCasino, setFilterCasino] = useState('');
@@ -103,8 +100,8 @@ export default function CalendarView({
 
   const hasActiveFilters = !!(filterPlayer || filterAssignedTo || filterCasino);
 
-  const gridStart = startOfWeek(startOfMonth(monthCursor));
-  const gridEnd = endOfWeek(endOfMonth(monthCursor));
+  const gridStart = startOfWeek(weekCursor);
+  const gridEnd = addDays(gridStart, 20); // 3 weeks total
   const days = useMemo(
     () => eachDayOfInterval({ start: gridStart, end: gridEnd }),
     [gridStart, gridEnd]
@@ -128,25 +125,25 @@ export default function CalendarView({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setMonthCursor((m) => subMonths(m, 1))}
+            onClick={() => setWeekCursor((w) => subWeeks(w, 1))}
             className="rounded-md px-2.5 py-1.5 text-sm hover:bg-white/10 transition-colors"
-            aria-label="Previous month"
+            aria-label="Previous week"
           >
             ‹
           </button>
-          <h2 className="font-display text-lg font-semibold w-40 text-center">
-            {format(monthCursor, 'MMMM yyyy')}
+          <h2 className="font-display text-lg font-semibold text-center whitespace-nowrap">
+            {format(gridStart, 'MMM d')} – {format(gridEnd, 'MMM d, yyyy')}
           </h2>
           <button
-            onClick={() => setMonthCursor((m) => addMonths(m, 1))}
+            onClick={() => setWeekCursor((w) => addWeeks(w, 1))}
             className="rounded-md px-2.5 py-1.5 text-sm hover:bg-white/10 transition-colors"
-            aria-label="Next month"
+            aria-label="Next week"
           >
             ›
           </button>
         </div>
         <button
-          onClick={() => setMonthCursor(startOfMonth(new Date()))}
+          onClick={() => setWeekCursor(startOfWeek(new Date()))}
           className="rounded-md border border-[var(--ticket-cream)]/20 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide hover:bg-white/10 transition-colors"
         >
           Today
@@ -159,7 +156,7 @@ export default function CalendarView({
           onChange={(e) => setFilterPlayer(e.target.value)}
           className={filterSelectClass}
         >
-          <option value="">All players</option>
+          <option value="">All identities</option>
           {playerOptions.map((name) => (
             <option key={name} value={name}>
               {name}
@@ -255,9 +252,7 @@ export default function CalendarView({
                   key={day.toISOString()}
                   className={`border-b border-[var(--ticket-cream)]/10 px-1.5 pt-1.5 ${
                     i < 6 ? 'border-r' : ''
-                  } ${isSameMonth(day, monthCursor) ? '' : 'opacity-40'} ${
-                    isToday(day) ? 'relative z-10 ring-2 ring-inset ring-[var(--brass-500)]' : ''
-                  }`}
+                  } ${isToday(day) ? 'relative z-10 ring-2 ring-inset ring-[var(--brass-500)]' : ''}`}
                   style={{ gridColumn: i + 1, gridRow: `1 / span ${Math.max(laneRows, 1) + 1}` }}
                 >
                   <span
