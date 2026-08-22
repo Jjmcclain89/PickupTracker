@@ -102,25 +102,11 @@ create trigger sync_pickup_assignee_share
   after insert or update of assigned_to on public.pickups
   for each row execute function public.sync_pickup_assignee_share();
 
--- Only the owner may change who a pickup is assigned to, since assignment
--- grants access — otherwise a shared (non-owner) user could hand access to
--- anyone just by reassigning the pickup.
-create or replace function public.enforce_assignee_change_owner_only()
-returns trigger
-language plpgsql
-as $$
-begin
-  if new.assigned_to is distinct from old.assigned_to and old.created_by is distinct from auth.uid() then
-    raise exception 'Only the pickup owner can reassign it.';
-  end if;
-  return new;
-end;
-$$;
-
+-- Owner, assignee, and shared users may all reassign a pickup (only delete is
+-- owner-only). Past deployments had a trigger restricting reassignment to the
+-- owner — drop it so re-running this script removes it from an existing DB.
 drop trigger if exists enforce_assignee_change_owner_only on public.pickups;
-create trigger enforce_assignee_change_owner_only
-  before update of assigned_to on public.pickups
-  for each row execute function public.enforce_assignee_change_owner_only();
+drop function if exists public.enforce_assignee_change_owner_only();
 
 -- Cross-table existence checks used by the RLS policies below. Pickups policies
 -- need to check pickup_shares, and pickup_shares policies need to check pickups
@@ -193,8 +179,8 @@ create policy "pickups insertable as self"
   to authenticated
   with check (created_by = auth.uid());
 
--- Owner, assignee, and shared users can all edit pickup fields (full edit
--- access); reassignment itself is further restricted to the owner above.
+-- Owner, assignee, and shared users can all edit pickup fields, including
+-- who it's assigned to (full edit access; only delete is owner-only below).
 drop policy if exists "pickups updatable by authenticated users" on public.pickups;
 drop policy if exists "pickups updatable by owner, assignee, or shared" on public.pickups;
 create policy "pickups updatable by owner, assignee, or shared"
