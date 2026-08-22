@@ -172,24 +172,18 @@ export default function PickupFormModal({
           </Field>
 
           <Field label="Assigned to">
-            {isOwner ? (
-              <select
-                value={form.assigned_to}
-                onChange={(e) => setForm((f) => ({ ...f, assigned_to: e.target.value }))}
-                className={inputClass}
-              >
-                <option value="">Unassigned</option>
-                {profiles.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.display_name}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <p className="text-sm py-2 text-[var(--ink)]">
-                {profiles.find((p) => p.id === form.assigned_to)?.display_name ?? 'Unassigned'}
-              </p>
-            )}
+            <select
+              value={form.assigned_to}
+              onChange={(e) => setForm((f) => ({ ...f, assigned_to: e.target.value }))}
+              className={inputClass}
+            >
+              <option value="">Unassigned</option>
+              {profiles.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.display_name}
+                </option>
+              ))}
+            </select>
           </Field>
 
           {isOwner ? (
