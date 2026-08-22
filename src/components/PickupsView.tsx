@@ -6,6 +6,7 @@ import CalendarView from './CalendarView';
 import PickupFormModal from './PickupFormModal';
 import BulkImportModal, { BulkPickupPayload } from './BulkImportModal';
 import MarkPickedUpModal from './MarkPickedUpModal';
+import DeleteConfirmModal from './DeleteConfirmModal';
 
 export default function PickupsView({
   initialPickups,
@@ -21,6 +22,7 @@ export default function PickupsView({
   const [editing, setEditing] = useState<PickupWithAssignee | null>(null);
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
   const [pickingUpFor, setPickingUpFor] = useState<PickupWithAssignee | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<PickupWithAssignee | null>(null);
 
   function openNew() {
     setEditing(null);
@@ -72,10 +74,11 @@ export default function PickupsView({
     }
   }
 
-  async function handleDelete() {
-    if (!editing) return;
-    await fetch(`/api/pickups/${editing.id}`, { method: 'DELETE' });
-    setPickups((prev) => prev.filter((p) => p.id !== editing.id));
+  async function handleConfirmDelete() {
+    if (!deleteTarget) return;
+    await fetch(`/api/pickups/${deleteTarget.id}`, { method: 'DELETE' });
+    setPickups((prev) => prev.filter((p) => p.id !== deleteTarget.id));
+    setDeleteTarget(null);
     setModalOpen(false);
   }
 
@@ -167,7 +170,7 @@ export default function PickupsView({
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         onSubmit={handleSubmit}
-        onDelete={editing ? handleDelete : undefined}
+        onDelete={editing ? () => setDeleteTarget(editing) : undefined}
         onTogglePickedUp={editing ? async () => requestTogglePickedUp(editing) : undefined}
         profiles={profiles}
         editing={editing}
@@ -190,6 +193,14 @@ export default function PickupsView({
         currentUserId={currentUserId}
         onConfirm={handleConfirmPickedUp}
         onClose={() => setPickingUpFor(null)}
+      />
+
+      <DeleteConfirmModal
+        key={`delete-${deleteTarget ? deleteTarget.id : 'closed'}`}
+        open={!!deleteTarget}
+        pickup={deleteTarget}
+        onConfirm={handleConfirmDelete}
+        onClose={() => setDeleteTarget(null)}
       />
     </div>
   );
