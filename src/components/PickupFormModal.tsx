@@ -54,7 +54,7 @@ export default function PickupFormModal({
   open: boolean;
   onClose: () => void;
   onSubmit: (values: FormState) => Promise<void>;
-  onDelete?: () => Promise<void>;
+  onDelete?: () => void;
   onTogglePickedUp?: () => Promise<void>;
   profiles: Profile[];
   editing: PickupWithAssignee | null;
