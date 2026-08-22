@@ -192,13 +192,19 @@ create policy "pickups updatable by owner, assignee, or shared"
     or public.has_pickup_share(id)
   );
 
--- Deleting a pickup is owner-only.
+-- Deleting a pickup is open to the same people who can already see/edit it:
+-- owner, assignee, or shared user.
 drop policy if exists "pickups deletable by authenticated users" on public.pickups;
 drop policy if exists "pickups deletable by owner" on public.pickups;
-create policy "pickups deletable by owner"
+drop policy if exists "pickups deletable by owner, assignee, or shared" on public.pickups;
+create policy "pickups deletable by owner, assignee, or shared"
   on public.pickups for delete
   to authenticated
-  using (created_by = auth.uid());
+  using (
+    created_by = auth.uid()
+    or assigned_to = auth.uid()
+    or public.has_pickup_share(id)
+  );
 
 -- A user can see their own share rows (to know what's shared with them); the
 -- owner can see and manage the full share list for their own pickups. Nobody

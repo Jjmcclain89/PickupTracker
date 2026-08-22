@@ -262,7 +262,7 @@ export default function PickupFormModal({
           )}
 
           <div className="flex gap-2 mt-2">
-            {editing && onDelete && isOwner && (
+            {editing && onDelete && (
               <button
                 type="button"
                 onClick={onDelete}
