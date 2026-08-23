@@ -23,6 +23,15 @@
   --status-picked: #6fae72;
   --status-picked-bg: #16321a;
 
+  /* Per-assignee calendar bar colors, cycled by profile order */
+  --assignee-1: #c9a227; /* gold */
+  --assignee-2: #5b8fb0; /* blue */
+  --assignee-3: #6fae72; /* green */
+  --assignee-4: #b3543f; /* terracotta */
+  --assignee-5: #8467b0; /* purple */
+  --assignee-6: #3f9088; /* teal */
+  --unassigned: #8a7a6a; /* muted taupe */
+
   --font-display: var(--font-oswald);
   --font-body: var(--font-inter);
   --font-mono: var(--font-jetbrains);

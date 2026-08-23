@@ -11,17 +11,11 @@ import {
   startOfWeek,
   subWeeks,
 } from 'date-fns';
-import { PickupWithAssignee, PickupStatus, Profile, getPickupStatus } from '@/types/pickup';
+import { PickupWithAssignee, Profile, getPickupStatus } from '@/types/pickup';
 import { parseDateOnly } from '@/lib/formatDateRange';
 import { formatAmount } from '@/lib/formatAmount';
+import { getAssigneeColorClass } from '@/lib/assigneeColors';
 import MultiSelectFilter from './MultiSelectFilter';
-
-const STATUS_BAR_CLASS: Record<PickupStatus, string> = {
-  active: 'bg-[var(--status-active)] text-[var(--ink)]',
-  upcoming: 'bg-[var(--status-upcoming)] text-[var(--ticket-cream)]',
-  expired: 'bg-[var(--status-expired)] text-[var(--ticket-cream)]',
-  picked_up: 'bg-[var(--status-picked)] text-[var(--ink)]',
-};
 
 const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const LANE_HEIGHT = 30;
@@ -262,12 +256,15 @@ export default function CalendarView({
 
               {weekItems.map((item) => {
                 const status = getPickupStatus(item.pickup);
+                const isPickedUp = status === 'picked_up';
                 const amount = Number(item.pickup.amount);
                 const amountLabel = amount.toLocaleString(undefined, { minimumFractionDigits: 0 });
-                const assigneeLabel =
-                  status === 'picked_up'
-                    ? `Picked up by ${item.pickup.picked_up_by_profile?.display_name ?? 'someone'}`
-                    : (item.pickup.assignee?.display_name ?? 'Unassigned');
+                const assigneeLabel = isPickedUp
+                  ? `Picked up by ${item.pickup.picked_up_by_profile?.display_name ?? 'someone'}`
+                  : (item.pickup.assignee?.display_name ?? 'Unassigned');
+                const colorClass = isPickedUp
+                  ? 'bg-[var(--ink-soft)]/25 text-[var(--ticket-cream)]/60'
+                  : getAssigneeColorClass(profiles, item.pickup.assigned_to);
                 return (
                   <div
                     key={item.pickup.id}
@@ -282,8 +279,8 @@ export default function CalendarView({
                     }}
                     title={`${item.pickup.player_name} — ${item.pickup.casino.name} — $${amountLabel} — ${assigneeLabel}`}
                     className={`relative z-10 mt-px flex items-center overflow-hidden px-1.5 cursor-pointer hover:brightness-110 transition-[filter] ${
-                      isCurrentWeek ? 'text-xs py-0.5' : 'text-[11px]'
-                    } ${STATUS_BAR_CLASS[status]} ${
+                      isPickedUp ? 'text-[9px] py-0 opacity-80' : isCurrentWeek ? 'text-xs py-0.5' : 'text-[11px]'
+                    } ${colorClass} ${
                       item.continuesBefore ? 'rounded-l-none ml-0' : 'rounded-l-sm ml-0.5'
                     } ${item.continuesAfter ? 'rounded-r-none mr-0' : 'rounded-r-sm mr-0.5'}`}
                     style={{
@@ -307,10 +304,12 @@ export default function CalendarView({
                         e.stopPropagation();
                         onTogglePickedUp(item.pickup);
                       }}
-                      title={status === 'picked_up' ? 'Undo pickup' : 'Mark picked up'}
-                      className="ml-1 shrink-0 rounded-full w-4 h-4 flex items-center justify-center text-[10px] leading-none bg-black/15 hover:bg-black/25 text-current transition-colors"
+                      title={isPickedUp ? 'Undo pickup' : 'Mark picked up'}
+                      className={`ml-1 shrink-0 rounded-full flex items-center justify-center leading-none bg-black/15 hover:bg-black/25 text-current transition-colors ${
+                        isPickedUp ? 'w-3 h-3 text-[8px]' : 'w-4 h-4 text-[10px]'
+                      }`}
                     >
-                      {status === 'picked_up' ? '↺' : '✓'}
+                      {isPickedUp ? '↺' : '✓'}
                     </button>
                   </div>
                 );
