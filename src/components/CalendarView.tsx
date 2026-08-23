@@ -13,6 +13,7 @@ import {
 } from 'date-fns';
 import { PickupWithAssignee, PickupStatus, Profile, getPickupStatus } from '@/types/pickup';
 import { parseDateOnly } from '@/lib/formatDateRange';
+import { formatAmount } from '@/lib/formatAmount';
 import MultiSelectFilter from './MultiSelectFilter';
 
 const STATUS_BAR_CLASS: Record<PickupStatus, string> = {
@@ -261,9 +262,8 @@ export default function CalendarView({
 
               {weekItems.map((item) => {
                 const status = getPickupStatus(item.pickup);
-                const amountLabel = Number(item.pickup.amount).toLocaleString(undefined, {
-                  minimumFractionDigits: 0,
-                });
+                const amount = Number(item.pickup.amount);
+                const amountLabel = amount.toLocaleString(undefined, { minimumFractionDigits: 0 });
                 const assigneeLabel =
                   status === 'picked_up'
                     ? `Picked up by ${item.pickup.picked_up_by_profile?.display_name ?? 'someone'}`
@@ -296,10 +296,11 @@ export default function CalendarView({
                       <span className="font-semibold">{item.pickup.player_name}</span>
                       <span className="font-normal opacity-80">
                         {' '}
-                        · {item.pickup.casino.name} · ${amountLabel} · {assigneeLabel}
+                        · {item.pickup.casino.name} · {assigneeLabel}
                       </span>
                       {item.continuesAfter ? ' ▸' : ''}
                     </span>
+                    <span className="shrink-0 font-semibold ml-1">${formatAmount(amount)}</span>
                     <button
                       type="button"
                       onClick={(e) => {
