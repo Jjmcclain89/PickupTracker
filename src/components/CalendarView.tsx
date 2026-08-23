@@ -7,9 +7,7 @@ import {
   differenceInCalendarDays,
   eachDayOfInterval,
   format,
-  isBefore,
   isToday,
-  startOfDay,
   startOfWeek,
   subWeeks,
 } from 'date-fns';
@@ -73,7 +71,6 @@ export default function CalendarView({
   onTogglePickedUp: (pickup: PickupWithAssignee) => void;
 }) {
   const [weekCursor, setWeekCursor] = useState(() => startOfWeek(new Date()));
-  const todayStart = useMemo(() => startOfDay(new Date()), []);
   const [filterPlayers, setFilterPlayers] = useState<string[]>([]);
   const [filterAssignedTo, setFilterAssignedTo] = useState<string[]>([]);
   const [filterCasinos, setFilterCasinos] = useState<string[]>([]);
@@ -230,8 +227,8 @@ export default function CalendarView({
           return (
             <div
               key={weekIdx}
-              className={`grid grid-cols-7 relative bg-[var(--felt-900)] ${
-                isCurrentWeek ? 'ring-1 ring-inset ring-[var(--brass-500)]/50' : ''
+              className={`grid grid-cols-7 relative ${
+                isCurrentWeek ? 'bg-[var(--felt-800)] ring-1 ring-inset ring-[var(--brass-500)]/50' : 'bg-[var(--felt-900)]'
               }`}
               style={{
                 gridTemplateRows: `${dateRowHeight}px repeat(${Math.max(laneRows, 1)}, ${laneHeight}px)`,
@@ -258,17 +255,6 @@ export default function CalendarView({
                   </span>
                 </div>
               ))}
-
-              {week.map((day, i) => {
-                if (!isBefore(day, todayStart)) return null;
-                return (
-                  <div
-                    key={`past-${day.toISOString()}`}
-                    className="pointer-events-none z-20 bg-black/30"
-                    style={{ gridColumn: i + 1, gridRow: `1 / span ${Math.max(laneRows, 1) + 1}` }}
-                  />
-                );
-              })}
 
               {weekItems.map((item) => {
                 const status = getPickupStatus(item.pickup);
