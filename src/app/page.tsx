@@ -23,10 +23,12 @@ export default async function Home() {
     .select('*')
     .order('display_name');
 
+  const { data: casinos } = await supabase.from('casinos').select('*').order('name');
+
   const { data: pickups } = await supabase
     .from('pickups')
     .select(
-      '*, assignee:assigned_to(id, username, display_name), picked_up_by_profile:picked_up_by(id, username, display_name), shares:pickup_shares(profile:profiles(id, username, display_name))'
+      '*, casino:casino_id(id, name, location, player_rewards_club), assignee:assigned_to(id, username, display_name), picked_up_by_profile:picked_up_by(id, username, display_name), shares:pickup_shares(profile:profiles(id, username, display_name))'
     )
     .order('date_start', { ascending: true });
 
@@ -36,6 +38,7 @@ export default async function Home() {
       <PickupsView
         initialPickups={pickups ?? []}
         profiles={profiles ?? []}
+        casinos={casinos ?? []}
         currentUserId={user.id}
       />
     </div>

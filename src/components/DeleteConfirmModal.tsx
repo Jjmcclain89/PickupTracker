@@ -32,7 +32,7 @@ export default function DeleteConfirmModal({
       <div className="ticket lift-in w-full sm:max-w-sm rounded-b-none sm:rounded-b-[10px] p-5 flex flex-col gap-3">
         <h2 className="font-display text-xl font-semibold">Delete pickup?</h2>
         <p className="text-sm text-[var(--ink-soft)]">
-          {pickup.player_name} — {pickup.casino}. This can&apos;t be undone.
+          {pickup.player_name} — {pickup.casino.name}. This can&apos;t be undone.
         </p>
 
         <div className="flex gap-2 mt-2">

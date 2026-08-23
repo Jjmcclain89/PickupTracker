@@ -18,7 +18,8 @@ Free tier is plenty for this. Grab from **Project Settings → API**:
 ### 2. Run the schema
 Paste `supabase/schema.sql` into the Supabase SQL Editor and run it. This creates:
 - `profiles` (extends `auth.users`, auto-populated on signup)
-- `pickups`
+- `casinos` (name, location, player rewards club — only name is required)
+- `pickups` (references a casino via `casino_id`)
 - RLS policies (any signed-in user of the 4 can read/write everything — it's a small shared tool, not multi-tenant)
 
 ### 3. Create the 4 users

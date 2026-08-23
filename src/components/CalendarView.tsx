@@ -79,10 +79,13 @@ export default function CalendarView({
     () => Array.from(new Set(pickups.map((p) => p.player_name))).sort(),
     [pickups]
   );
-  const casinoOptions = useMemo(
-    () => Array.from(new Set(pickups.map((p) => p.casino))).sort(),
-    [pickups]
-  );
+  const casinoOptions = useMemo(() => {
+    const byId = new Map<string, string>();
+    pickups.forEach((p) => byId.set(p.casino_id, p.casino.name));
+    return Array.from(byId, ([value, label]) => ({ value, label })).sort((a, b) =>
+      a.label.localeCompare(b.label)
+    );
+  }, [pickups]);
   const assigneeOptions = useMemo(
     () => [
       { value: 'unassigned', label: 'Unassigned' },
@@ -93,7 +96,7 @@ export default function CalendarView({
 
   const filteredPickups = useMemo(() => {
     return pickups.filter((p) => {
-      if (filterCasinos.length > 0 && !filterCasinos.includes(p.casino)) return false;
+      if (filterCasinos.length > 0 && !filterCasinos.includes(p.casino_id)) return false;
       if (filterPlayers.length > 0 && !filterPlayers.includes(p.player_name)) return false;
       if (filterAssignedTo.length > 0) {
         const key = p.assigned_to ?? 'unassigned';
@@ -159,7 +162,7 @@ export default function CalendarView({
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <MultiSelectFilter
           label="Casinos"
-          options={casinoOptions.map((c) => ({ value: c, label: c }))}
+          options={casinoOptions}
           selected={filterCasinos}
           onChange={setFilterCasinos}
         />
@@ -277,7 +280,7 @@ export default function CalendarView({
                         onEdit(item.pickup);
                       }
                     }}
-                    title={`${item.pickup.player_name} — ${item.pickup.casino} — $${amountLabel} — ${assigneeLabel}`}
+                    title={`${item.pickup.player_name} — ${item.pickup.casino.name} — $${amountLabel} — ${assigneeLabel}`}
                     className={`relative z-10 mt-px flex items-center overflow-hidden px-1.5 cursor-pointer hover:brightness-110 transition-[filter] ${
                       isCurrentWeek ? 'text-xs py-0.5' : 'text-[11px]'
                     } ${STATUS_BAR_CLASS[status]} ${
@@ -293,7 +296,7 @@ export default function CalendarView({
                       <span className="font-semibold">{item.pickup.player_name}</span>
                       <span className="font-normal opacity-80">
                         {' '}
-                        · {item.pickup.casino} · ${amountLabel} · {assigneeLabel}
+                        · {item.pickup.casino.name} · ${amountLabel} · {assigneeLabel}
                       </span>
                       {item.continuesAfter ? ' ▸' : ''}
                     </span>

@@ -1,28 +1,54 @@
 'use client';
 
 import { useState } from 'react';
-import { PickupWithAssignee, Profile } from '@/types/pickup';
+import { Casino, PickupWithAssignee, Profile } from '@/types/pickup';
 import CalendarView from './CalendarView';
 import PickupFormModal from './PickupFormModal';
 import BulkImportModal, { BulkPickupPayload } from './BulkImportModal';
 import MarkPickedUpModal from './MarkPickedUpModal';
 import DeleteConfirmModal from './DeleteConfirmModal';
+import { CasinoSelectValue } from './CasinoSelect';
 
 export default function PickupsView({
   initialPickups,
   profiles,
+  casinos: initialCasinos,
   currentUserId,
 }: {
   initialPickups: PickupWithAssignee[];
   profiles: Profile[];
+  casinos: Casino[];
   currentUserId: string;
 }) {
   const [pickups, setPickups] = useState(initialPickups);
+  const [casinos, setCasinos] = useState(initialCasinos);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<PickupWithAssignee | null>(null);
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
   const [pickingUpFor, setPickingUpFor] = useState<PickupWithAssignee | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<PickupWithAssignee | null>(null);
+
+  // Resolves a CasinoSelect value to a casino_id, creating the casino first
+  // if the user typed a new name instead of picking an existing one.
+  async function resolveCasinoId(casino: CasinoSelectValue): Promise<string> {
+    if (casino.mode === 'existing') return casino.casino_id;
+
+    const res = await fetch('/api/casinos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: casino.name }),
+    });
+    const body = await res.json();
+    if (!res.ok || !body.casino) {
+      throw new Error(body.error ?? 'Could not create that casino.');
+    }
+    setCasinos((prev) =>
+      prev.some((c) => c.id === body.casino.id)
+        ? prev
+        : [...prev, body.casino].sort((a, b) => a.name.localeCompare(b.name))
+    );
+    return body.casino.id as string;
+  }
 
   function openNew() {
     setEditing(null);
@@ -36,7 +62,7 @@ export default function PickupsView({
 
   async function handleSubmit(values: {
     player_name: string;
-    casino: string;
+    casino: CasinoSelectValue;
     amount: string;
     date_start: string;
     date_end: string;
@@ -44,9 +70,10 @@ export default function PickupsView({
     notes: string;
     shared_user_ids: string[];
   }) {
+    const casino_id = await resolveCasinoId(values.casino);
     const payload = {
       player_name: values.player_name,
-      casino: values.casino,
+      casino_id,
       amount: Number(values.amount),
       date_start: values.date_start,
       date_end: values.date_end,
@@ -173,6 +200,7 @@ export default function PickupsView({
         onDelete={editing ? () => setDeleteTarget(editing) : undefined}
         onTogglePickedUp={editing ? async () => requestTogglePickedUp(editing) : undefined}
         profiles={profiles}
+        casinos={casinos}
         editing={editing}
         currentUserId={currentUserId}
       />
@@ -183,6 +211,8 @@ export default function PickupsView({
         onClose={() => setBulkModalOpen(false)}
         onSubmit={handleBulkSubmit}
         profiles={profiles}
+        casinos={casinos}
+        resolveCasinoId={resolveCasinoId}
       />
 
       <MarkPickedUpModal
