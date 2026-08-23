@@ -230,8 +230,8 @@ export default function CalendarView({
           return (
             <div
               key={weekIdx}
-              className={`grid grid-cols-7 relative ${
-                isCurrentWeek ? 'bg-[var(--felt-800)] ring-1 ring-inset ring-[var(--brass-500)]/50' : 'bg-[var(--felt-900)]'
+              className={`grid grid-cols-7 relative bg-[var(--felt-900)] ${
+                isCurrentWeek ? 'ring-1 ring-inset ring-[var(--brass-500)]/50' : ''
               }`}
               style={{
                 gridTemplateRows: `${dateRowHeight}px repeat(${Math.max(laneRows, 1)}, ${laneHeight}px)`,
