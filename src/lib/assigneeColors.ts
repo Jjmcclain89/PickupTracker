@@ -4,7 +4,7 @@ import { Profile } from '@/types/pickup';
 const PALETTE = [
   'bg-[var(--assignee-1)] text-[var(--ink)]',
   'bg-[var(--assignee-2)] text-[var(--ticket-cream)]',
-  'bg-[var(--assignee-3)] text-[var(--ink)]',
+  'bg-[var(--assignee-3)] text-[var(--ticket-cream)]',
   'bg-[var(--assignee-4)] text-[var(--ticket-cream)]',
   'bg-[var(--assignee-5)] text-[var(--ticket-cream)]',
   'bg-[var(--assignee-6)] text-[var(--ticket-cream)]',
