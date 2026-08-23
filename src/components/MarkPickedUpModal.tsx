@@ -37,7 +37,7 @@ export default function MarkPickedUpModal({
       <div className="ticket lift-in w-full sm:max-w-sm rounded-b-none sm:rounded-b-[10px] p-5 flex flex-col gap-3">
         <h2 className="font-display text-xl font-semibold">Mark picked up</h2>
         <p className="text-sm text-[var(--ink-soft)]">
-          {pickup.player_name} — {pickup.casino}
+          {pickup.player_name} — {pickup.casino.name}
         </p>
 
         <div>

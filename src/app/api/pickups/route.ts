@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
 const SELECT =
-  '*, assignee:assigned_to(id, username, display_name), picked_up_by_profile:picked_up_by(id, username, display_name), shares:pickup_shares(profile:profiles(id, username, display_name))';
+  '*, casino:casino_id(id, name, location, player_rewards_club), assignee:assigned_to(id, username, display_name), picked_up_by_profile:picked_up_by(id, username, display_name), shares:pickup_shares(profile:profiles(id, username, display_name))';
 
 export async function GET() {
   const supabase = await createClient();
@@ -24,10 +24,18 @@ export async function POST(request: Request) {
   if (!user.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await request.json();
-  const { player_name, casino, amount, date_start, date_end, assigned_to, notes, shared_user_ids } =
-    body;
+  const {
+    player_name,
+    casino_id,
+    amount,
+    date_start,
+    date_end,
+    assigned_to,
+    notes,
+    shared_user_ids,
+  } = body;
 
-  if (!player_name || !casino || !amount || !date_start || !date_end) {
+  if (!player_name || !casino_id || !amount || !date_start || !date_end) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
@@ -35,7 +43,7 @@ export async function POST(request: Request) {
     .from('pickups')
     .insert({
       player_name,
-      casino,
+      casino_id,
       amount,
       date_start,
       date_end,

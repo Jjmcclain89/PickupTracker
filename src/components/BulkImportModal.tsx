@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from 'react';
 import { addDays, format, startOfWeek } from 'date-fns';
-import { Profile } from '@/types/pickup';
+import { Casino, Profile } from '@/types/pickup';
 import { parseDateOnly } from '@/lib/formatDateRange';
+import CasinoSelect, { CasinoSelectValue, isCasinoFilled } from './CasinoSelect';
 
 type DayName = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
@@ -31,7 +32,7 @@ type DayRange = { begin: DayName; end: DayName };
 
 export type BulkPickupPayload = {
   player_name: string;
-  casino: string;
+  casino_id: string;
   amount: number;
   date_start: string;
   date_end: string;
@@ -44,14 +45,18 @@ export default function BulkImportModal({
   onClose,
   onSubmit,
   profiles,
+  casinos,
+  resolveCasinoId,
 }: {
   open: boolean;
   onClose: () => void;
   onSubmit: (pickups: BulkPickupPayload[]) => Promise<void>;
   profiles: Profile[];
+  casinos: Casino[];
+  resolveCasinoId: (casino: CasinoSelectValue) => Promise<string>;
 }) {
   const [playerName, setPlayerName] = useState('');
-  const [casino, setCasino] = useState('');
+  const [casino, setCasino] = useState<CasinoSelectValue>({ mode: 'existing', casino_id: '' });
   const [amount, setAmount] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
   const [notes, setNotes] = useState('');
@@ -97,7 +102,7 @@ export default function BulkImportModal({
     e.preventDefault();
     setError(null);
 
-    if (!playerName || !casino || !amount) {
+    if (!playerName || !isCasinoFilled(casino) || !amount) {
       setError('Fill in whose pickup, casino, and amount.');
       return;
     }
@@ -114,18 +119,18 @@ export default function BulkImportModal({
       return;
     }
 
-    const payloads: BulkPickupPayload[] = preview.map(({ start, end }) => ({
-      player_name: playerName,
-      casino,
-      amount: Number(amount),
-      date_start: format(start, 'yyyy-MM-dd'),
-      date_end: format(end, 'yyyy-MM-dd'),
-      assigned_to: assignedTo || null,
-      notes: notes || null,
-    }));
-
     setSaving(true);
     try {
+      const casino_id = await resolveCasinoId(casino);
+      const payloads: BulkPickupPayload[] = preview.map(({ start, end }) => ({
+        player_name: playerName,
+        casino_id,
+        amount: Number(amount),
+        date_start: format(start, 'yyyy-MM-dd'),
+        date_end: format(end, 'yyyy-MM-dd'),
+        assigned_to: assignedTo || null,
+        notes: notes || null,
+      }));
       await onSubmit(payloads);
       onClose();
     } catch (err) {
@@ -164,12 +169,7 @@ export default function BulkImportModal({
           </Field>
 
           <Field label="Casino">
-            <input
-              value={casino}
-              onChange={(e) => setCasino(e.target.value)}
-              placeholder="Black Hawk"
-              className={inputClass}
-            />
+            <CasinoSelect casinos={casinos} value={casino} onChange={setCasino} className={inputClass} />
           </Field>
 
           <div className="flex gap-3">

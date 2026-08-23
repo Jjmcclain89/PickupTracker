@@ -5,10 +5,17 @@ export type Profile = {
   must_change_password: boolean;
 };
 
+export type Casino = {
+  id: string;
+  name: string;
+  location: string | null;
+  player_rewards_club: string | null;
+};
+
 export type Pickup = {
   id: string;
   player_name: string;
-  casino: string;
+  casino_id: string;
   amount: number;
   date_start: string; // ISO date, e.g. "2026-08-20"
   date_end: string;
@@ -22,6 +29,7 @@ export type Pickup = {
 };
 
 export type PickupWithAssignee = Pickup & {
+  casino: Casino;
   assignee: Profile | null;
   picked_up_by_profile: Profile | null;
   shares: { profile: Profile }[];

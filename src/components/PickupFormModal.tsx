@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import { format } from 'date-fns';
-import { Profile, PickupWithAssignee, getSharedProfiles } from '@/types/pickup';
+import { Casino, Profile, PickupWithAssignee, getSharedProfiles } from '@/types/pickup';
 import { parseDateOnly } from '@/lib/formatDateRange';
 import DateRangePicker from './DateRangePicker';
+import CasinoSelect, { CasinoSelectValue, isCasinoFilled } from './CasinoSelect';
 
 type FormState = {
   player_name: string;
-  casino: string;
+  casino: CasinoSelectValue;
   amount: string;
   date_start: string;
   date_end: string;
@@ -19,7 +20,7 @@ type FormState = {
 
 const EMPTY: FormState = {
   player_name: '',
-  casino: '',
+  casino: { mode: 'existing', casino_id: '' },
   amount: '',
   date_start: '',
   date_end: '',
@@ -31,7 +32,7 @@ const EMPTY: FormState = {
 function toFormState(p: PickupWithAssignee): FormState {
   return {
     player_name: p.player_name,
-    casino: p.casino,
+    casino: { mode: 'existing', casino_id: p.casino_id },
     amount: String(p.amount),
     date_start: p.date_start,
     date_end: p.date_end,
@@ -48,6 +49,7 @@ export default function PickupFormModal({
   onDelete,
   onTogglePickedUp,
   profiles,
+  casinos,
   editing,
   currentUserId,
 }: {
@@ -57,6 +59,7 @@ export default function PickupFormModal({
   onDelete?: () => void;
   onTogglePickedUp?: () => Promise<void>;
   profiles: Profile[];
+  casinos: Casino[];
   editing: PickupWithAssignee | null;
   currentUserId: string;
 }) {
@@ -73,7 +76,13 @@ export default function PickupFormModal({
     e.preventDefault();
     setError(null);
 
-    if (!form.player_name || !form.casino || !form.amount || !form.date_start || !form.date_end) {
+    if (
+      !form.player_name ||
+      !isCasinoFilled(form.casino) ||
+      !form.amount ||
+      !form.date_start ||
+      !form.date_end
+    ) {
       setError('Fill in every field except notes.');
       return;
     }
@@ -139,10 +148,10 @@ export default function PickupFormModal({
           </Field>
 
           <Field label="Casino">
-            <input
+            <CasinoSelect
+              casinos={casinos}
               value={form.casino}
-              onChange={(e) => setForm((f) => ({ ...f, casino: e.target.value }))}
-              placeholder="Black Hawk"
+              onChange={(casino) => setForm((f) => ({ ...f, casino }))}
               className={inputClass}
             />
           </Field>

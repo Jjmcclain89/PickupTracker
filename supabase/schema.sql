@@ -9,11 +9,24 @@ create table if not exists public.profiles (
   created_at timestamptz not null default now()
 );
 
+-- Casinos table
+create table if not exists public.casinos (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  location text,
+  player_rewards_club text,
+  created_at timestamptz not null default now()
+);
+
+-- Case-insensitive uniqueness, so "Black Hawk" and "black hawk" can't both
+-- get created via the "+ New casino" picker.
+create unique index if not exists casinos_name_unique_idx on public.casinos (lower(name));
+
 -- Pickups table
 create table if not exists public.pickups (
   id uuid primary key default gen_random_uuid(),
   player_name text not null,        -- whose pickup this is (Josh / Igor / Dave)
-  casino text not null,
+  casino_id uuid not null references public.casinos(id),
   amount numeric(10,2) not null,
   date_start date not null,
   date_end date not null,
@@ -30,7 +43,26 @@ create table if not exists public.pickups (
 -- For existing databases created before picked_up_by was added.
 alter table public.pickups add column if not exists picked_up_by uuid references public.profiles(id) on delete set null;
 
+-- For existing databases: replace the free-text casino column with a
+-- reference to the casinos table above. Backfill a casino row per distinct
+-- existing value, point casino_id at it, then drop the old text column.
+alter table public.pickups add column if not exists casino_id uuid references public.casinos(id);
+
+insert into public.casinos (name)
+select distinct trim(p.casino) from public.pickups p
+where p.casino is not null and trim(p.casino) <> ''
+on conflict (lower(name)) do nothing;
+
+update public.pickups p
+set casino_id = c.id
+from public.casinos c
+where p.casino_id is null and lower(c.name) = lower(trim(p.casino));
+
+alter table public.pickups drop column if exists casino;
+alter table public.pickups alter column casino_id set not null;
+
 create index if not exists pickups_assigned_to_idx on public.pickups(assigned_to);
+create index if not exists pickups_casino_id_idx on public.pickups(casino_id);
 create index if not exists pickups_date_range_idx on public.pickups(date_start, date_end);
 
 -- Explicit visibility grants beyond the owner (created_by) and the assignee.
@@ -144,6 +176,27 @@ $$;
 alter table public.profiles enable row level security;
 alter table public.pickups enable row level security;
 alter table public.pickup_shares enable row level security;
+alter table public.casinos enable row level security;
+
+-- Casinos are shared reference data, same trust model as profiles: any
+-- signed-in user can read, add, or edit one.
+drop policy if exists "casinos readable by authenticated users" on public.casinos;
+create policy "casinos readable by authenticated users"
+  on public.casinos for select
+  to authenticated
+  using (true);
+
+drop policy if exists "casinos insertable by authenticated users" on public.casinos;
+create policy "casinos insertable by authenticated users"
+  on public.casinos for insert
+  to authenticated
+  with check (true);
+
+drop policy if exists "casinos updatable by authenticated users" on public.casinos;
+create policy "casinos updatable by authenticated users"
+  on public.casinos for update
+  to authenticated
+  using (true);
 
 -- Any logged-in user (all 4 of you) can see every profile —
 -- this is a small shared coordination tool, not a multi-tenant app.
