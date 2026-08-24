@@ -57,11 +57,13 @@ function assignLanes(items: { pickup: PickupWithAssignee; start: Date; end: Date
 export default function CalendarView({
   pickups,
   profiles,
+  currentUserId,
   onEdit,
   onTogglePickedUp,
 }: {
   pickups: PickupWithAssignee[];
   profiles: Profile[];
+  currentUserId: string;
   onEdit: (pickup: PickupWithAssignee) => void;
   onTogglePickedUp: (pickup: PickupWithAssignee) => void;
 }) {
@@ -155,6 +157,21 @@ export default function CalendarView({
       </div>
 
       <div className="flex flex-wrap items-center gap-2 mb-4">
+        <button
+          type="button"
+          onClick={() =>
+            setFilterAssignedTo((prev) =>
+              prev.length === 1 && prev[0] === currentUserId ? [] : [currentUserId]
+            )
+          }
+          className={`rounded-md border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-colors ${
+            filterAssignedTo.length === 1 && filterAssignedTo[0] === currentUserId
+              ? 'bg-[var(--brass-500)] text-[var(--ink)] border-[var(--brass-500)]'
+              : 'border-[var(--ticket-cream)]/20 text-[var(--ticket-cream)]/70 hover:bg-white/10'
+          }`}
+        >
+          Assigned to me
+        </button>
         <MultiSelectFilter
           label="Casinos"
           options={casinoOptions}

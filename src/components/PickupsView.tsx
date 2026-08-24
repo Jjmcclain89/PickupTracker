@@ -188,6 +188,7 @@ export default function PickupsView({
       <CalendarView
         pickups={pickups}
         profiles={profiles}
+        currentUserId={currentUserId}
         onEdit={openEdit}
         onTogglePickedUp={requestTogglePickedUp}
       />
