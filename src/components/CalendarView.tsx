@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useSyncExternalStore } from 'react';
 import {
   addDays,
   addWeeks,
@@ -22,6 +22,20 @@ const LANE_HEIGHT = 30;
 const DATE_ROW_HEIGHT = 34;
 const CURRENT_WEEK_LANE_HEIGHT = 40;
 const CURRENT_WEEK_DATE_ROW_HEIGHT = 46;
+
+function subscribeNoop() {
+  return () => {};
+}
+
+// True once hydrated on the client, false during SSR and the first client
+// render — lets us defer anything date-dependent to the browser's clock.
+function useMounted(): boolean {
+  return useSyncExternalStore(
+    subscribeNoop,
+    () => true,
+    () => false
+  );
+}
 
 type LaneItem = {
   pickup: PickupWithAssignee;
@@ -71,6 +85,13 @@ export default function CalendarView({
   const [filterPlayers, setFilterPlayers] = useState<string[]>([]);
   const [filterAssignedTo, setFilterAssignedTo] = useState<string[]>([]);
   const [filterCasinos, setFilterCasinos] = useState<string[]>([]);
+
+  // "Today" depends on the viewer's local clock/timezone. This is a client
+  // component, but Next.js still server-renders its first paint — on the
+  // server that's the deploy's clock (UTC on Vercel), which can land on a
+  // different calendar day than the visitor's. Hold off rendering until
+  // after mount so every date below is computed from the browser's clock.
+  const mounted = useMounted();
 
   const playerOptions = useMemo(
     () => Array.from(new Set(pickups.map((p) => p.player_name))).sort(),
@@ -125,6 +146,8 @@ export default function CalendarView({
       .filter((item) => item.end >= gridStart && item.start <= gridEnd);
     return assignLanes(items);
   }, [filteredPickups, gridStart, gridEnd]);
+
+  if (!mounted) return null;
 
   return (
     <div>
