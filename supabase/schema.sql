@@ -35,6 +35,7 @@ create table if not exists public.pickups (
   picked_up_by uuid references public.profiles(id) on delete set null, -- who actually picked it up
   notes text,
   created_by uuid references public.profiles(id) on delete set null,
+  is_public boolean not null default false, -- public: anyone signed in can see/edit/delete it, no shares needed
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint date_range_valid check (date_end >= date_start)
@@ -42,6 +43,10 @@ create table if not exists public.pickups (
 
 -- For existing databases created before picked_up_by was added.
 alter table public.pickups add column if not exists picked_up_by uuid references public.profiles(id) on delete set null;
+
+-- For existing databases created before is_public was added. Defaults every
+-- existing pickup to private, keeping exactly the access it has today.
+alter table public.pickups add column if not exists is_public boolean not null default false;
 
 -- For existing databases: replace the free-text casino column with a
 -- reference to the casinos table above. Backfill a casino row per distinct
@@ -213,16 +218,19 @@ create policy "users can update own profile"
   using (auth.uid() = id);
 
 -- Pickups are private by default: visible only to the owner (created_by),
--- the current assignee, or anyone explicitly granted a pickup_shares row.
+-- the current assignee, or anyone explicitly granted a pickup_shares row —
+-- unless marked public, in which case any signed-in user can see it.
 drop policy if exists "pickups readable by authenticated users" on public.pickups;
 drop policy if exists "pickups readable by owner, assignee, or shared" on public.pickups;
-create policy "pickups readable by owner, assignee, or shared"
+drop policy if exists "pickups readable by owner, assignee, shared, or public" on public.pickups;
+create policy "pickups readable by owner, assignee, shared, or public"
   on public.pickups for select
   to authenticated
   using (
     created_by = auth.uid()
     or assigned_to = auth.uid()
     or public.has_pickup_share(id)
+    or is_public
   );
 
 drop policy if exists "pickups insertable by authenticated users" on public.pickups;
@@ -232,31 +240,35 @@ create policy "pickups insertable as self"
   to authenticated
   with check (created_by = auth.uid());
 
--- Owner, assignee, and shared users can all edit pickup fields, including
--- who it's assigned to (full edit access; only delete is owner-only below).
+-- Owner, assignee, shared users, and (for public pickups) anyone can edit
+-- pickup fields, including who it's assigned to and delete.
 drop policy if exists "pickups updatable by authenticated users" on public.pickups;
 drop policy if exists "pickups updatable by owner, assignee, or shared" on public.pickups;
-create policy "pickups updatable by owner, assignee, or shared"
+drop policy if exists "pickups updatable by owner, assignee, shared, or public" on public.pickups;
+create policy "pickups updatable by owner, assignee, shared, or public"
   on public.pickups for update
   to authenticated
   using (
     created_by = auth.uid()
     or assigned_to = auth.uid()
     or public.has_pickup_share(id)
+    or is_public
   );
 
 -- Deleting a pickup is open to the same people who can already see/edit it:
--- owner, assignee, or shared user.
+-- owner, assignee, shared user, or anyone if it's public.
 drop policy if exists "pickups deletable by authenticated users" on public.pickups;
 drop policy if exists "pickups deletable by owner" on public.pickups;
 drop policy if exists "pickups deletable by owner, assignee, or shared" on public.pickups;
-create policy "pickups deletable by owner, assignee, or shared"
+drop policy if exists "pickups deletable by owner, assignee, shared, or public" on public.pickups;
+create policy "pickups deletable by owner, assignee, shared, or public"
   on public.pickups for delete
   to authenticated
   using (
     created_by = auth.uid()
     or assigned_to = auth.uid()
     or public.has_pickup_share(id)
+    or is_public
   );
 
 -- A user can see their own share rows (to know what's shared with them); the

@@ -71,6 +71,7 @@ export default function PickupsView({
     shared_user_ids: string[];
     picked_up: boolean;
     picked_up_by: string;
+    is_public: boolean;
   }) {
     const casino_id = await resolveCasinoId(values.casino);
     const payload: Record<string, unknown> = {
@@ -82,6 +83,7 @@ export default function PickupsView({
       assigned_to: values.assigned_to || null,
       notes: values.notes || null,
       shared_user_ids: values.shared_user_ids,
+      is_public: values.is_public,
     };
 
     if (editing) {
