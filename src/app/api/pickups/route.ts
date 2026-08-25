@@ -33,6 +33,8 @@ export async function POST(request: Request) {
     assigned_to,
     notes,
     shared_user_ids,
+    picked_up_at,
+    picked_up_by,
   } = body;
 
   if (!player_name || !casino_id || !amount || !date_start || !date_end) {
@@ -50,6 +52,8 @@ export async function POST(request: Request) {
       assigned_to: assigned_to || null,
       notes: notes || null,
       created_by: user.user.id,
+      picked_up_at: picked_up_at || null,
+      picked_up_by: picked_up_by || null,
     })
     .select('id')
     .single();

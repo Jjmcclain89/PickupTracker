@@ -69,9 +69,11 @@ export default function PickupsView({
     assigned_to: string;
     notes: string;
     shared_user_ids: string[];
+    picked_up: boolean;
+    picked_up_by: string;
   }) {
     const casino_id = await resolveCasinoId(values.casino);
-    const payload = {
+    const payload: Record<string, unknown> = {
       player_name: values.player_name,
       casino_id,
       amount: Number(values.amount),
@@ -91,6 +93,10 @@ export default function PickupsView({
       const { pickup } = await res.json();
       setPickups((prev) => prev.map((p) => (p.id === pickup.id ? pickup : p)));
     } else {
+      if (values.picked_up && values.picked_up_by) {
+        payload.picked_up_at = new Date().toISOString();
+        payload.picked_up_by = values.picked_up_by;
+      }
       const res = await fetch('/api/pickups', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
