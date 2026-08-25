@@ -18,6 +18,7 @@ type FormState = {
   shared_user_ids: string[];
   picked_up: boolean;
   picked_up_by: string;
+  is_public: boolean;
 };
 
 const EMPTY: FormState = {
@@ -31,6 +32,7 @@ const EMPTY: FormState = {
   shared_user_ids: [],
   picked_up: false,
   picked_up_by: '',
+  is_public: false,
 };
 
 function toFormState(p: PickupWithAssignee): FormState {
@@ -45,6 +47,7 @@ function toFormState(p: PickupWithAssignee): FormState {
     shared_user_ids: getSharedProfiles(p).map((s) => s.id),
     picked_up: false,
     picked_up_by: '',
+    is_public: p.is_public,
   };
 }
 
@@ -202,48 +205,77 @@ export default function PickupFormModal({
             </select>
           </Field>
 
-          {isOwner ? (
-            <Field label="Shared with">
-              <div className="flex flex-col gap-1.5">
-                {profiles
-                  .filter((p) => p.id !== currentUserId && p.id !== form.assigned_to)
-                  .map((p) => (
-                    <label key={p.id} className="flex items-center gap-2 text-sm text-[var(--ink)]">
-                      <input
-                        type="checkbox"
-                        checked={form.shared_user_ids.includes(p.id)}
-                        onChange={(e) =>
-                          setForm((f) => ({
-                            ...f,
-                            shared_user_ids: e.target.checked
-                              ? [...f.shared_user_ids, p.id]
-                              : f.shared_user_ids.filter((id) => id !== p.id),
-                          }))
-                        }
-                      />
-                      {p.display_name}
-                    </label>
-                  ))}
-              </div>
-              {form.assigned_to && (
-                <p className="text-[11px] text-[var(--ink-soft)] mt-1">
-                  {profiles.find((p) => p.id === form.assigned_to)?.display_name ?? 'The assignee'}{' '}
-                  also has access automatically, since they&apos;re assigned.
-                </p>
-              )}
-            </Field>
-          ) : (
-            editing &&
-            getSharedProfiles(editing).length > 0 && (
+          <Field label="Visibility">
+            <div className="flex gap-4">
+              <label className="flex items-center gap-1.5 text-sm text-[var(--ink)]">
+                <input
+                  type="radio"
+                  name="is_public"
+                  checked={!form.is_public}
+                  onChange={() => setForm((f) => ({ ...f, is_public: false }))}
+                />
+                Private
+              </label>
+              <label className="flex items-center gap-1.5 text-sm text-[var(--ink)]">
+                <input
+                  type="radio"
+                  name="is_public"
+                  checked={form.is_public}
+                  onChange={() => setForm((f) => ({ ...f, is_public: true }))}
+                />
+                Public
+              </label>
+            </div>
+            <p className="text-[11px] text-[var(--ink-soft)] mt-1">
+              {form.is_public
+                ? 'Anyone signed in can see, edit, and delete this pickup.'
+                : 'Only you, the assignee, and anyone shared below can see this pickup.'}
+            </p>
+          </Field>
+
+          {!form.is_public &&
+            (isOwner ? (
               <Field label="Shared with">
-                <p className="text-sm text-[var(--ink)]">
-                  {getSharedProfiles(editing)
-                    .map((p) => p.display_name)
-                    .join(', ')}
-                </p>
+                <div className="flex flex-col gap-1.5">
+                  {profiles
+                    .filter((p) => p.id !== currentUserId && p.id !== form.assigned_to)
+                    .map((p) => (
+                      <label key={p.id} className="flex items-center gap-2 text-sm text-[var(--ink)]">
+                        <input
+                          type="checkbox"
+                          checked={form.shared_user_ids.includes(p.id)}
+                          onChange={(e) =>
+                            setForm((f) => ({
+                              ...f,
+                              shared_user_ids: e.target.checked
+                                ? [...f.shared_user_ids, p.id]
+                                : f.shared_user_ids.filter((id) => id !== p.id),
+                            }))
+                          }
+                        />
+                        {p.display_name}
+                      </label>
+                    ))}
+                </div>
+                {form.assigned_to && (
+                  <p className="text-[11px] text-[var(--ink-soft)] mt-1">
+                    {profiles.find((p) => p.id === form.assigned_to)?.display_name ?? 'The assignee'}{' '}
+                    also has access automatically, since they&apos;re assigned.
+                  </p>
+                )}
               </Field>
-            )
-          )}
+            ) : (
+              editing &&
+              getSharedProfiles(editing).length > 0 && (
+                <Field label="Shared with">
+                  <p className="text-sm text-[var(--ink)]">
+                    {getSharedProfiles(editing)
+                      .map((p) => p.display_name)
+                      .join(', ')}
+                  </p>
+                </Field>
+              )
+            ))}
 
           <Field label="Notes (optional)">
             <textarea

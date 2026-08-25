@@ -24,6 +24,7 @@ export async function PATCH(
     'notes',
     'picked_up_at',
     'picked_up_by',
+    'is_public',
   ] as const;
 
   const update: Record<string, unknown> = {};

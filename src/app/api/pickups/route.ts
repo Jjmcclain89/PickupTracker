@@ -35,6 +35,7 @@ export async function POST(request: Request) {
     shared_user_ids,
     picked_up_at,
     picked_up_by,
+    is_public,
   } = body;
 
   if (!player_name || !casino_id || !amount || !date_start || !date_end) {
@@ -54,6 +55,7 @@ export async function POST(request: Request) {
       created_by: user.user.id,
       picked_up_at: picked_up_at || null,
       picked_up_by: picked_up_by || null,
+      is_public: !!is_public,
     })
     .select('id')
     .single();

@@ -24,6 +24,7 @@ export type Pickup = {
   picked_up_by: string | null;
   notes: string | null;
   created_by: string | null;
+  is_public: boolean;
   created_at: string;
   updated_at: string;
 };
