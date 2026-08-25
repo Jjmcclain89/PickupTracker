@@ -338,19 +338,19 @@ export default function CalendarView({
                       {item.continuesAfter ? ' ▸' : ''}
                     </span>
                     <span className="shrink-0 font-semibold ml-1">${formatAmount(amount)}</span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onTogglePickedUp(item.pickup);
-                      }}
-                      title={isPickedUp ? 'Undo pickup' : 'Mark picked up'}
-                      className={`ml-1 shrink-0 rounded-full flex items-center justify-center leading-none border-2 border-[var(--brass-500)] bg-black/15 hover:bg-black/25 text-current transition-colors ${
-                        isPickedUp ? 'w-4 h-4 text-[9px]' : 'w-6 h-6 text-sm'
-                      }`}
-                    >
-                      {isPickedUp ? '↺' : '✓'}
-                    </button>
+                    {!isPickedUp && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onTogglePickedUp(item.pickup);
+                        }}
+                        title="Mark picked up"
+                        className="ml-1 shrink-0 rounded-full flex items-center justify-center leading-none border-2 border-[var(--brass-500)] bg-black/15 hover:bg-black/25 text-current transition-colors w-6 h-6 text-sm"
+                      >
+                        ✓
+                      </button>
+                    )}
                   </div>
                 );
               })}
