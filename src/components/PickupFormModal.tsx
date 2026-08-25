@@ -341,6 +341,16 @@ export default function PickupFormModal({
             </div>
           )}
 
+          {editing && onDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="mt-2 w-full rounded-md border border-red-700/30 text-red-700 py-2.5 text-sm font-semibold hover:bg-red-50 transition-colors"
+            >
+              Delete
+            </button>
+          )}
+
           <div className="flex gap-2 mt-2">
             <button
               type="button"
@@ -349,15 +359,6 @@ export default function PickupFormModal({
             >
               Cancel
             </button>
-            {editing && onDelete && (
-              <button
-                type="button"
-                onClick={onDelete}
-                className="rounded-md border border-red-700/30 text-red-700 px-4 py-2.5 text-sm font-semibold hover:bg-red-50 transition-colors"
-              >
-                Delete
-              </button>
-            )}
             <button
               type="submit"
               disabled={saving}
