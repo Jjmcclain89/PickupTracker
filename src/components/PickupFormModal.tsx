@@ -16,6 +16,8 @@ type FormState = {
   assigned_to: string;
   notes: string;
   shared_user_ids: string[];
+  picked_up: boolean;
+  picked_up_by: string;
 };
 
 const EMPTY: FormState = {
@@ -27,6 +29,8 @@ const EMPTY: FormState = {
   assigned_to: '',
   notes: '',
   shared_user_ids: [],
+  picked_up: false,
+  picked_up_by: '',
 };
 
 function toFormState(p: PickupWithAssignee): FormState {
@@ -39,6 +43,8 @@ function toFormState(p: PickupWithAssignee): FormState {
     assigned_to: p.assigned_to ?? '',
     notes: p.notes ?? '',
     shared_user_ids: getSharedProfiles(p).map((s) => s.id),
+    picked_up: false,
+    picked_up_by: '',
   };
 }
 
@@ -81,7 +87,8 @@ export default function PickupFormModal({
       !isCasinoFilled(form.casino) ||
       !form.amount ||
       !form.date_start ||
-      !form.date_end
+      !form.date_end ||
+      (form.picked_up && !form.picked_up_by)
     ) {
       setError('Fill in every field except notes.');
       return;
@@ -249,6 +256,38 @@ export default function PickupFormModal({
 
           {error && (
             <p className="text-sm text-red-700 bg-red-100 rounded-md px-3 py-2">{error}</p>
+          )}
+
+          {!editing && (
+            <Field label="Already picked up?">
+              <label className="flex items-center gap-2 text-sm text-[var(--ink)]">
+                <input
+                  type="checkbox"
+                  checked={form.picked_up}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      picked_up: e.target.checked,
+                      picked_up_by: e.target.checked ? f.picked_up_by || currentUserId : f.picked_up_by,
+                    }))
+                  }
+                />
+                Yes, already picked up
+              </label>
+              {form.picked_up && (
+                <select
+                  value={form.picked_up_by}
+                  onChange={(e) => setForm((f) => ({ ...f, picked_up_by: e.target.value }))}
+                  className={`${inputClass} mt-2`}
+                >
+                  {profiles.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.id === currentUserId ? `${p.display_name} (you)` : p.display_name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </Field>
           )}
 
           {editing && onTogglePickedUp && (
