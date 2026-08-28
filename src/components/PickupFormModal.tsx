@@ -61,6 +61,7 @@ export default function PickupFormModal({
   casinos,
   editing,
   currentUserId,
+  onSwitchToBulk,
 }: {
   open: boolean;
   onClose: () => void;
@@ -71,6 +72,7 @@ export default function PickupFormModal({
   casinos: Casino[];
   editing: PickupWithAssignee | null;
   currentUserId: string;
+  onSwitchToBulk?: () => void;
 }) {
   const [form, setForm] = useState<FormState>(() => (editing ? toFormState(editing) : EMPTY));
   const [saving, setSaving] = useState(false);
@@ -134,10 +136,21 @@ export default function PickupFormModal({
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm px-0 sm:px-4">
       <div className="ticket lift-in w-full sm:max-w-md max-h-[92dvh] overflow-y-auto rounded-b-none sm:rounded-b-[10px]">
-        <div className="px-5 pt-5 pb-3 flex items-center justify-between">
-          <h2 className="font-display text-xl font-semibold">
-            {editing ? 'Edit pickup' : 'New pickup'}
-          </h2>
+        <div className="px-5 pt-5 pb-3 flex items-start justify-between">
+          <div>
+            <h2 className="font-display text-xl font-semibold">
+              {editing ? 'Edit pickup' : 'New pickup'}
+            </h2>
+            {onSwitchToBulk && (
+              <button
+                type="button"
+                onClick={onSwitchToBulk}
+                className="text-xs font-semibold uppercase tracking-wide text-[var(--ink-soft)] hover:text-[var(--ink)] transition-colors mt-0.5"
+              >
+                Add multiple instead
+              </button>
+            )}
+          </div>
           <button
             onClick={onClose}
             className="text-[var(--ink-soft)] text-xl leading-none px-2"

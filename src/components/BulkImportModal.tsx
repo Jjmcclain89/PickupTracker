@@ -47,6 +47,7 @@ export default function BulkImportModal({
   profiles,
   casinos,
   resolveCasinoId,
+  onSwitchToSingle,
 }: {
   open: boolean;
   onClose: () => void;
@@ -54,6 +55,7 @@ export default function BulkImportModal({
   profiles: Profile[];
   casinos: Casino[];
   resolveCasinoId: (casino: CasinoSelectValue) => Promise<string>;
+  onSwitchToSingle?: () => void;
 }) {
   const [playerName, setPlayerName] = useState('');
   const [casino, setCasino] = useState<CasinoSelectValue>({ mode: 'existing', casino_id: '' });
@@ -143,8 +145,19 @@ export default function BulkImportModal({
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm px-0 sm:px-4">
       <div className="ticket lift-in w-full sm:max-w-lg max-h-[92dvh] overflow-y-auto rounded-b-none sm:rounded-b-[10px]">
-        <div className="px-5 pt-5 pb-3 flex items-center justify-between">
-          <h2 className="font-display text-xl font-semibold">Add multiple pickups</h2>
+        <div className="px-5 pt-5 pb-3 flex items-start justify-between">
+          <div>
+            <h2 className="font-display text-xl font-semibold">Add multiple pickups</h2>
+            {onSwitchToSingle && (
+              <button
+                type="button"
+                onClick={onSwitchToSingle}
+                className="text-xs font-semibold uppercase tracking-wide text-[var(--ink-soft)] hover:text-[var(--ink)] transition-colors mt-0.5"
+              >
+                Add a single pickup instead
+              </button>
+            )}
+          </div>
           <button
             onClick={onClose}
             className="text-[var(--ink-soft)] text-xl leading-none px-2"
