@@ -60,6 +60,17 @@ export default function PickupsView({
     setModalOpen(true);
   }
 
+  function switchToBulk() {
+    setModalOpen(false);
+    setBulkModalOpen(true);
+  }
+
+  function switchToSingle() {
+    setBulkModalOpen(false);
+    setEditing(null);
+    setModalOpen(true);
+  }
+
   async function handleSubmit(values: {
     player_name: string;
     casino: CasinoSelectValue;
@@ -177,20 +188,12 @@ export default function PickupsView({
     <div className="px-4 sm:px-6 py-6 max-w-6xl mx-auto w-full flex-1">
       <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
         <h1 className="font-display text-2xl font-semibold">Pickups</h1>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setBulkModalOpen(true)}
-            className="rounded-md border border-[var(--ticket-cream)]/20 px-4 py-2 text-sm font-semibold hover:bg-white/10 transition-colors"
-          >
-            Add multiple pickups
-          </button>
-          <button
-            onClick={openNew}
-            className="rounded-md bg-[var(--brass-500)] text-[var(--ink)] font-display font-medium tracking-wide px-4 py-2 text-sm hover:bg-[var(--brass-400)] transition-colors"
-          >
-            + New pickup
-          </button>
-        </div>
+        <button
+          onClick={openNew}
+          className="rounded-md bg-[var(--brass-500)] text-[var(--ink)] font-display font-medium tracking-wide px-4 py-2 text-sm hover:bg-[var(--brass-400)] transition-colors"
+        >
+          + New pickup
+        </button>
       </div>
 
       <CalendarView
@@ -212,6 +215,7 @@ export default function PickupsView({
         casinos={casinos}
         editing={editing}
         currentUserId={currentUserId}
+        onSwitchToBulk={editing ? undefined : switchToBulk}
       />
 
       <BulkImportModal
@@ -222,6 +226,7 @@ export default function PickupsView({
         profiles={profiles}
         casinos={casinos}
         resolveCasinoId={resolveCasinoId}
+        onSwitchToSingle={switchToSingle}
       />
 
       <MarkPickedUpModal
